@@ -37,32 +37,42 @@ function getResultUrl(challengeToken: string): string {
   return `https://www.geoguessr.com/api/v3/results/highscores/${challengeToken}?friends=true&limit=26`;
 }
 
+function padCenter(text: string, length: number): string {
+  const padding = " ".repeat(length - text.length);
+  const leftPadding = padding.slice(0, padding.length / 2);
+  const rightPadding = padding.slice(padding.length / 2);
+  return `${leftPadding}${text}${rightPadding}`;
+}
+
 function createResultTable(players: ChallengePlayerScore[]) {
+  const nameLength = players.reduce((max, player) => {
+    return Math.max(max, player.playerName.length);
+  }, 6);
+
+  const nameLengthLine = "═".repeat(nameLength);
+  const nameLengthText = padCenter("Player", nameLength);
   const tableStart =
-    "╔════════════════╦═══════════╦═══════════╦═══════════╦═══════════╦═══════════╦═══════════╗\n" +
-    "║ Player         ║ Round 1   ║ Round 2   ║ Round 3   ║ Round 4   ║ Round 5   ║ Total     ║\n" +
-    "╠════════════════╬═══════════╬═══════════╬═══════════╬═══════════╬═══════════╬═══════════╣\n";
+    `╔${nameLengthLine}╦════╦════╦════╦════╦════╦═════╗\n` +
+    `║${nameLengthText}║ R1 ║ R2 ║ R3 ║ R4 ║ R5 ║ All ║\n` +
+    `╠${nameLengthLine}╬════╬════╬════╬════╬════╬═════╣\n`;
 
   let playerResults = players
     .map((score) => {
       const playerGuesses = score.game.player.guesses;
       const playerGuessesRow = playerGuesses
         .map((guess) => {
-          return ` ${guess.roundScoreInPoints.toString().padEnd(10)}`;
+          return `${padCenter(guess.roundScoreInPoints.toString(), 4)}`;
         })
         .join("║");
 
-      const playerNamePadded = score.playerName.padEnd(15);
-      const playerScorePadded = score.totalScore.toString().padEnd(10);
+      const playerNamePadded = padCenter(score.playerName, nameLength);
+      const playerScorePadded = padCenter(score.totalScore.toString(), 5);
 
-      return `║ ${playerNamePadded}║${playerGuessesRow}║ ${playerScorePadded}║ \n`;
+      return `║${playerNamePadded}║${playerGuessesRow}║${playerScorePadded}║ \n`;
     })
-    .join(
-      "╠════════════════╬═══════════╬═══════════╬═══════════╬═══════════╬═══════════╬═══════════╣\n"
-    );
+    .join(`╠${nameLengthLine}╬════╬════╬════╬════╬════╬═════╣\n`);
 
-  const tableEnd =
-    "╚════════════════╩═══════════╩═══════════╩═══════════╩═══════════╩═══════════╩═══════════╝";
+  const tableEnd = `╚${nameLengthLine}╩════╩════╩════╩════╩════╩═════╝`;
 
   return `\`\`\`\n${tableStart}${playerResults}${tableEnd}\n\`\`\``;
 }
