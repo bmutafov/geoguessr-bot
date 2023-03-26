@@ -1,8 +1,11 @@
-import { Client, IntentsBitField, Message } from "discord.js";
+import { Client, IntentsBitField, MessageReaction, User } from "discord.js";
 import { config } from "dotenv";
 import { createChallenge } from "./challenges/create";
-import { getChallengeResults } from "./challenges/results";
-import maps from "./utils/map-codes";
+import {
+  getChallengeResults,
+  toggleTableShort,
+  updateChallengeResults,
+} from "./challenges/results";
 
 config();
 
@@ -10,6 +13,7 @@ const client = new Client({
   intents: [
     IntentsBitField.Flags.Guilds,
     IntentsBitField.Flags.GuildMessages,
+    IntentsBitField.Flags.GuildMessageReactions,
     IntentsBitField.Flags.MessageContent,
   ],
 });
@@ -46,6 +50,28 @@ client.on("messageCreate", async (message) => {
     const currentBotMessage = await message.reply(
       `New challenge: https://www.geoguessr.com/challenge/${token} \n\n`
     );
+
+    currentBotMessage.react("🔁");
+    currentBotMessage.react("🔍");
+
+    const filter = (reaction: MessageReaction, user: User) => {
+      return (
+        (reaction.emoji.name === "🔍" || reaction.emoji.name === "🔁") &&
+        user.id !== client.user?.id
+      );
+    };
+
+    const collector = currentBotMessage.createReactionCollector({ filter });
+
+    collector.on("collect", (reaction, user) => {
+      if (reaction.emoji.name === "🔍") toggleTableShort();
+
+      updateChallengeResults({
+        challengeToken: token,
+        message: currentBotMessage,
+      });
+      reaction.users.remove(user.id);
+    });
 
     getChallengeResults({
       challengeToken: token,
