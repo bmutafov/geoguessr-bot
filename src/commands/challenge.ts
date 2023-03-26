@@ -71,6 +71,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 		const challengeInfo = await getChallengeInfo(token);
 
 		const { components, embed } = newChallengeEmbed({
+			token,
 			challengeUrl,
 			user: interaction.user.username,
 			map: challengeInfo.map.name,
@@ -86,40 +87,10 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 			fetchReply: true,
 		});
 
-		const collector = addReactions(interaction.client, botReplyMessage);
-
-		collector.on('collect', (reaction, user) => {
-			if (reaction.emoji.name === '🔁') {
-				resultsImage(token).then((r) => {
-					if (r instanceof Buffer) {
-						botReplyMessage.edit({ embeds: [], files: [{ attachment: r }] });
-					}
-				});
-			}
-
-			reaction.users.remove(user.id);
-		});
-
 		pollResults({
 			challengeToken: token,
 			message: botReplyMessage,
 			timeoutMs: (options.timeLimit ?? DefaultChallengeSettings.timeLimit) * 5100,
 		});
 	}
-}
-
-function addReactions(client: Client, message: Message) {
-	const reactionEmojis = ['🔁'];
-
-	reactionEmojis.forEach((emoji) => message.react(emoji));
-
-	const filter = (reaction: MessageReaction, user: User) =>
-		Boolean(
-			reaction.emoji.name &&
-				reactionEmojis.includes(reaction.emoji.name) &&
-				user.id !== client.user?.id
-		);
-
-	const collector = message.createReactionCollector({ filter });
-	return collector;
 }

@@ -1,17 +1,15 @@
+require('source-map-support').install();
+require('dotenv').config();
+
 import { Client, Collection, Events, GatewayIntentBits } from 'discord.js';
-import { config } from 'dotenv';
 import { loadCommands } from './utils/load-commands';
 import { green } from 'colors';
-
-require('source-map-support').install();
-
-config();
+import { getUpdatedChallengeResults } from './challenges/results-image';
 
 const client = new Client({
 	intents: [
 		GatewayIntentBits.Guilds,
 		GatewayIntentBits.GuildMessages,
-		GatewayIntentBits.GuildMessageReactions,
 		GatewayIntentBits.MessageContent,
 	],
 });
@@ -27,6 +25,19 @@ client.commands = new Collection();
 loadCommands(client);
 
 client.on(Events.InteractionCreate, async (interaction) => {
+	if (interaction.isButton()) {
+		const [action, challengeToken] = interaction.customId.split(':');
+
+		if (action === 'refetch') {
+			const newResults = await getUpdatedChallengeResults(challengeToken);
+			if (newResults) {
+				interaction.update({ files: [{ attachment: newResults }] });
+			} else {
+				interaction.update({ content: interaction.message.content });
+			}
+		}
+	}
+
 	if (!interaction.isChatInputCommand()) return;
 	const command = interaction.client.commands.get(interaction.commandName);
 

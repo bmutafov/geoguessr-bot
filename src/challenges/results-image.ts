@@ -1,4 +1,4 @@
-import { AxiosResponse } from 'axios';
+import axios, { AxiosResponse } from 'axios';
 import { Message } from 'discord.js';
 import nodeHtmlToImage from 'node-html-to-image';
 import { geoGuessrClient } from '../utils/axios-instance';
@@ -6,11 +6,6 @@ import { geoGuessrClient } from '../utils/axios-instance';
 type ChallengeResultsOptions = {
 	challengeToken: string;
 	timeoutMs: number;
-	message: Message;
-};
-
-type UpdateResultParams = {
-	challengeToken: string;
 	message: Message;
 };
 
@@ -65,8 +60,11 @@ function getPlayersResults(players: ChallengePlayerScore[]) {
 export function pollResults({ challengeToken, timeoutMs, message }: ChallengeResultsOptions) {
 	resultsLengths.set(challengeToken, 0);
 
-	const interval = setInterval(() => {
-		updateChallengeResults({ challengeToken, message });
+	const interval = setInterval(async () => {
+		const newResults = await getUpdatedChallengeResults(challengeToken);
+		if (newResults) {
+			message.edit({ files: [{ attachment: newResults }] });
+		}
 	}, 5000);
 
 	setTimeout(() => {
@@ -76,22 +74,18 @@ export function pollResults({ challengeToken, timeoutMs, message }: ChallengeRes
 	}, timeoutMs);
 }
 
-export async function updateChallengeResults({ challengeToken, message }: UpdateResultParams) {
-	let result: AxiosResponse<ChallengeResultsResponse>;
+export async function getUpdatedChallengeResults(token: string) {
 	try {
-		result = await geoGuessrClient<ChallengeResultsResponse>(getResultUrl(challengeToken));
-	} catch (error) {
-		return;
-	}
-	resultsImage(challengeToken).then((r) => {
-		if (r instanceof Buffer) {
-			message.edit({ embeds: [], files: [{ attachment: r }] });
+		const result = await resultsImage(token);
+		if (result instanceof Buffer) {
+			return result;
 		}
-	});
+		return null;
+	} catch (err) {}
 }
 
 export async function resultsImage(token: string) {
-	const { data } = await geoGuessrClient<ChallengeResultsResponse>(getResultUrl(token));
+	const { data } = await geoGuessrClient.get<ChallengeResultsResponse>(getResultUrl(token));
 	const playerResults = getPlayersResults(data.items);
 
 	if (resultsLengths.has(token)) {

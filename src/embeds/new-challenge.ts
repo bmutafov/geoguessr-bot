@@ -2,6 +2,7 @@ import { ActionRowBuilder, ButtonBuilder, EmbedBuilder } from '@discordjs/builde
 import { ButtonStyle } from 'discord.js';
 
 type NewChallengeEmbedOptions = {
+	token: string;
 	challengeUrl: string;
 	user: string;
 	map: string;
@@ -32,6 +33,10 @@ export const newChallengeEmbed = (options: NewChallengeEmbedOptions) => ({
 		new ButtonBuilder()
 			.setLabel('Play challenge')
 			.setStyle(ButtonStyle.Link)
-			.setURL(options.challengeUrl)
+			.setURL(options.challengeUrl),
+		new ButtonBuilder()
+			.setLabel('Refresh')
+			.setCustomId(`refetch:${options.token}`)
+			.setStyle(ButtonStyle.Secondary)
 	),
 });
