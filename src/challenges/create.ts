@@ -15,18 +15,31 @@ type ChallengeResponse = {
 	token: string;
 };
 
-export async function createChallenge(options: ChallengeOptions): Promise<string> {
+export const DefaultChallengeSettings: ChallengeRequest = {
+	map: '59a1514f17631e74145b6f47',
+	forbidMoving: false,
+	forbidRotating: false,
+	forbidZooming: false,
+	timeLimit: 30,
+	rounds: 5,
+};
+
+export async function createChallenge({
+	map = DefaultChallengeSettings.map,
+	forbidMoving = DefaultChallengeSettings.forbidMoving,
+	forbidRotating = DefaultChallengeSettings.forbidRotating,
+	forbidZooming = DefaultChallengeSettings.forbidZooming,
+	timeLimit = DefaultChallengeSettings.timeLimit,
+}: ChallengeOptions): Promise<string> {
 	//TODO: Error handling
 	//TODO: Custom game configuration
 
-	const { map, forbidMoving, forbidRotating, forbidZooming, timeLimit } = options;
-
 	const body: ChallengeRequest = {
 		map: map ?? '59a1514f17631e74145b6f47',
-		forbidMoving: forbidMoving ?? false,
-		forbidRotating: forbidRotating ?? false,
-		forbidZooming: forbidZooming ?? false,
-		timeLimit: timeLimit ?? 10,
+		forbidMoving,
+		forbidRotating,
+		forbidZooming,
+		timeLimit,
 		rounds: 5,
 	};
 
