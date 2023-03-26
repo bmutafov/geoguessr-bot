@@ -1,4 +1,4 @@
-import axios, { AxiosResponse } from 'axios';
+import { geoGuessrClient } from '../utils/axios-instance';
 
 type ChallengeRequest = {
 	map: string;
@@ -43,15 +43,7 @@ export async function createChallenge({
 		rounds: 5,
 	};
 
-	const { data } = await axios.post<ChallengeResponse>(
-		'https://www.geoguessr.com/api/v3/challenges',
-		body,
-		{
-			headers: {
-				cookie: process.env.COOKIE,
-			},
-		}
-	);
+	const { data } = await geoGuessrClient.post<ChallengeResponse>('/api/v3/challenges', body);
 
 	return data.token;
 }

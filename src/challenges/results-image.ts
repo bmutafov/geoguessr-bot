@@ -1,7 +1,9 @@
-import axios, { AxiosResponse } from 'axios';
 import { Message } from 'discord.js';
 import nodeHtmlToImage from 'node-html-to-image';
 import { geoGuessrClient } from '../utils/axios-instance';
+import fs from 'node:fs';
+import path from 'node:path';
+import { challengeComponents } from '../embeds/new-challenge';
 
 type ChallengeResultsOptions = {
 	challengeToken: string;
@@ -35,14 +37,23 @@ type ChallengeResultsResponse = {
 	items: Array<ChallengePlayerScore>;
 };
 
+const POLLING_INTERVAL = 5000;
+
 const resultsLengths: Map<string, number> = new Map();
 
 function getResultUrl(challengeToken: string): string {
 	return `/api/v3/results/highscores/${challengeToken}?friends=true&limit=26`;
 }
 
-function getPlayersResults(players: ChallengePlayerScore[]) {
-	return players.map((score) => {
+async function getPlayersResults(token: string) {
+	const { data } = await geoGuessrClient.get<ChallengeResultsResponse>(getResultUrl(token));
+
+	if (resultsLengths.has(token)) {
+		if (resultsLengths.get(token) === data.items.length) return null;
+		resultsLengths.set(token, data.items.length);
+	}
+
+	return data.items.map((score) => {
 		const guesses = score.game.player.guesses.map((guess) => guess.roundScoreInPoints);
 		const avatar = 'https://www.geoguessr.com/images/auto/48/48/ce/0/plain/' + score.pinUrl;
 
@@ -63,12 +74,18 @@ export function pollResults({ challengeToken, timeoutMs, message }: ChallengeRes
 	const interval = setInterval(async () => {
 		const newResults = await getUpdatedChallengeResults(challengeToken);
 		if (newResults) {
-			message.edit({ files: [{ attachment: newResults }] });
+			const components = challengeComponents(challengeToken);
+			message.edit({ components: [components], files: [{ attachment: newResults }] });
 		}
-	}, 5000);
+	}, POLLING_INTERVAL);
 
 	setTimeout(() => {
 		clearInterval(interval);
+		const results = resultsLengths.get(challengeToken);
+		if (results === 0) {
+			const components = challengeComponents(challengeToken);
+			message.edit({ components: [components] });
+		}
 		resultsLengths.delete(challengeToken);
 		console.log('Stopped polling results');
 	}, timeoutMs);
@@ -76,7 +93,7 @@ export function pollResults({ challengeToken, timeoutMs, message }: ChallengeRes
 
 export async function getUpdatedChallengeResults(token: string) {
 	try {
-		const result = await resultsImage(token);
+		const result = await resultsToImage(token);
 		if (result instanceof Buffer) {
 			return result;
 		}
@@ -84,57 +101,16 @@ export async function getUpdatedChallengeResults(token: string) {
 	} catch (err) {}
 }
 
-export async function resultsImage(token: string) {
-	const { data } = await geoGuessrClient.get<ChallengeResultsResponse>(getResultUrl(token));
-	const playerResults = getPlayersResults(data.items);
+const template = fs
+	.readFileSync(path.resolve(__dirname, '../../public/results-image.hbs'))
+	.toString();
 
-	if (resultsLengths.has(token)) {
-		if (resultsLengths.get(token) === playerResults.length) return;
-		resultsLengths.set(token, playerResults.length);
-	}
+export async function resultsToImage(token: string) {
+	const playerResults = await getPlayersResults(token);
+	if (!playerResults) return null;
 
 	const result = await nodeHtmlToImage({
-		html: `<style>
-		@import url("https://fonts.cdnfonts.com/css/neo-sans-pro"); table { font-family: "Neo Sans Pro",
-		sans-serif; background: rgb(2, 0, 36); background: linear-gradient( 128deg, rgba(2, 0, 36, 1) 0%,
-		rgba(9, 9, 121, 1) 47%, rgba(146, 20, 255, 1) 100% ); padding: 1rem; border-radius: 20px; color:
-		white; } th, td { text-align: left; padding: 2px 15px; } th { padding-bottom: 10px; } .player-info
-		{ display: flex; align-items: center; gap: 10px; } .player-info img { border: 3px solid white;
-		border-radius: 50%; }
-
-		.container { height: {{containerHeight}}px, width: 1300px }
-	</style>
-	<div class='container'>
-		<table>
-			<thead>
-				<tr>
-					<th>Player</th>
-					<th>Round 1</th>
-					<th>Round 2</th>
-					<th>Round 3</th>
-					<th>Round 4</th>
-					<th>Round 5</th>
-					<th>Total Score</th>
-				</tr>
-			</thead>
-			<tbody>
-				{{#each playerResults}}
-					<tr>
-						<td>
-							<div class='player-info'>
-								<img src='{{avatar}}' width='24' height='24' />
-								{{playerName}}
-							</div>
-						</td>
-						{{#each guesses}}
-							<td>{{this}}</td>
-						{{/each}}
-						<td>{{totalScore}}</td>
-					</tr>
-				{{/each}}
-			</tbody>
-		</table>
-	</div>`,
+		html: template,
 		content: { containerHeight: playerResults.length * 35 + 70, playerResults },
 		transparent: true,
 		selector: '.container',

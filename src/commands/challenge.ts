@@ -1,16 +1,8 @@
-import {
-	ChatInputCommandInteraction,
-	Client,
-	Message,
-	MessageReaction,
-	SlashCommandBuilder,
-	User,
-} from 'discord.js';
+import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
 import { createChallenge, DefaultChallengeSettings } from '../challenges/create';
 import { getChallengeInfo } from '../challenges/get-challenge-info';
-import { pollResults, resultsImage } from '../challenges/results-image';
+import { pollResults } from '../challenges/results-image';
 import { newChallengeEmbed } from '../embeds/new-challenge';
-import getMapId from '../utils/get-mapid';
 
 export const data = new SlashCommandBuilder()
 	.setName('challenge')
@@ -67,12 +59,10 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 			timeLimit: options.timeLimit,
 		});
 
-		const challengeUrl = `https://www.geoguessr.com/challenge/${token}`;
 		const challengeInfo = await getChallengeInfo(token);
 
 		const { components, embed } = newChallengeEmbed({
 			token,
-			challengeUrl,
 			user: interaction.user.username,
 			map: challengeInfo.map.name,
 			timeLimit: options.timeLimit + 's',
