@@ -1,0 +1,39 @@
+<style>
+	@import url("https://fonts.cdnfonts.com/css/neo-sans-pro"); table { font-family: "Neo Sans Pro",
+	sans-serif; background: rgb(2, 0, 36); background: linear-gradient( 128deg, rgba(2, 0, 36, 1) 0%,
+	rgba(9, 9, 121, 1) 47%, rgba(146, 20, 255, 1) 100% ); padding: 1rem; border-radius: 20px; color:
+	white; } th, td { text-align: left; padding: 2px 15px; } th { padding-bottom: 10px; } .player-info
+	{ display: flex; align-items: center; gap: 10px; } .player-info img { border: 3px solid white;
+	border-radius: 50%; }
+</style>
+<div class='container'>
+	<table>
+		<thead>
+			<tr>
+				<th>Player</th>
+				<th>Round 1</th>
+				<th>Round 2</th>
+				<th>Round 3</th>
+				<th>Round 4</th>
+				<th>Round 5</th>
+				<th>Total Score</th>
+			</tr>
+		</thead>
+		<tbody>
+			{{#each playerScores}}
+				<tr>
+					<td>
+						<div class='player-info'>
+							<img src='{{avatar}}' width='24' height='24' />
+							{{playerName}}
+						</div>
+					</td>
+					{{#each guesses}}
+						<td>{{this}}</td>
+					{{/each}}
+					<td>{{totalScore}}</td>
+				</tr>
+			{{/each}}
+		</tbody>
+	</table>
+</div>
