@@ -1,10 +1,10 @@
 require('source-map-support').install();
 require('dotenv').config();
 
-import { Client, Collection, Events, GatewayIntentBits } from 'discord.js';
+import { Client, Collection, EmbedBuilder, Events, GatewayIntentBits } from 'discord.js';
 import { loadCommands } from './utils/load-commands';
 import { green } from 'colors';
-import { getUpdatedChallengeResults } from './challenges/results-image';
+import { constructUpdateObject, getUpdatedChallengeResults } from './challenges/results-image';
 
 const client = new Client({
 	intents: [
@@ -31,7 +31,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
 		if (action === 'refetch') {
 			const newResults = await getUpdatedChallengeResults(challengeToken);
 			if (newResults) {
-				interaction.update({ files: [{ attachment: newResults }] });
+				const messageEditOptions = constructUpdateObject({
+					embed: interaction.message.embeds[0],
+					token: challengeToken,
+					results: newResults,
+				});
+
+				interaction.update(messageEditOptions);
 			} else {
 				interaction.update({ content: interaction.message.content });
 			}
