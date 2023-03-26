@@ -1,4 +1,5 @@
 Setup .env file:
+
 ```
 PERMISSIONS=68672
 CLIENT_ID=<client ID>
@@ -7,6 +8,7 @@ COOKIE=<your cookie extracted from the header request cookie to any geoguessr /a
 ```
 
 To start the bot:
+
 ```
 npm install
 ```
@@ -14,4 +16,3 @@ npm install
 ```
 npm run dev
 ```
-
