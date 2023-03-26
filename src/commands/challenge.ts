@@ -8,13 +8,9 @@ import {
 } from 'discord.js';
 import { createChallenge, DefaultChallengeSettings } from '../challenges/create';
 import { getChallengeInfo } from '../challenges/get-challenge-info';
-import {
-	getChallengeResults,
-	toggleTableShort,
-	updateChallengeResults,
-} from '../challenges/results';
-import { resultsImage } from '../challenges/results-image';
+import { pollResults, resultsImage } from '../challenges/results-image';
 import { newChallengeEmbed } from '../embeds/new-challenge';
+import getMapId from '../utils/get-mapid';
 
 export const data = new SlashCommandBuilder()
 	.setName('challenge')
@@ -23,6 +19,12 @@ export const data = new SlashCommandBuilder()
 		option
 			.setName('mapid')
 			.setDescription('The ID of the map you want to play. Default: A Diverse world')
+			.setRequired(false)
+	)
+	.addStringOption((option) =>
+		option
+			.setName('mapname')
+			.setDescription('The name of the map you want to play. Default: A Diverse world')
 			.setRequired(false)
 	)
 	.addBooleanOption((option) =>
@@ -87,9 +89,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 		const collector = addReactions(interaction.client, botReplyMessage);
 
 		collector.on('collect', (reaction, user) => {
-			// if (reaction.emoji.name === '🔍') toggleTableShort();
-			if (reaction.emoji.name === '😎') {
-				console.log('here!');
+			if (reaction.emoji.name === '🔁') {
 				resultsImage(token).then((r) => {
 					if (r instanceof Buffer) {
 						botReplyMessage.edit({ embeds: [], files: [{ attachment: r }] });
@@ -97,23 +97,19 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 				});
 			}
 
-			// updateChallengeResults({
-			// 	challengeToken: token,
-			// 	message: botReplyMessage,
-			// });
 			reaction.users.remove(user.id);
 		});
 
-		// getChallengeResults({
-		// 	challengeToken: token,
-		// 	message: botReplyMessage,
-		// 	timeoutMs: (options.timeLimit ?? DefaultChallengeSettings.timeLimit) * 5100,
-		// });
+		pollResults({
+			challengeToken: token,
+			message: botReplyMessage,
+			timeoutMs: (options.timeLimit ?? DefaultChallengeSettings.timeLimit) * 5100,
+		});
 	}
 }
 
 function addReactions(client: Client, message: Message) {
-	const reactionEmojis = ['🔁', '🔍', '😎'];
+	const reactionEmojis = ['🔁'];
 
 	reactionEmojis.forEach((emoji) => message.react(emoji));
 

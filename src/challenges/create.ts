@@ -35,7 +35,7 @@ export async function createChallenge({
 	//TODO: Custom game configuration
 
 	const body: ChallengeRequest = {
-		map: map ?? '59a1514f17631e74145b6f47',
+		map,
 		forbidMoving,
 		forbidRotating,
 		forbidZooming,

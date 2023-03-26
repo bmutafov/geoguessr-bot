@@ -1,3 +1,4 @@
+import { AxiosResponse } from 'axios';
 import { Message } from 'discord.js';
 import nodeHtmlToImage from 'node-html-to-image';
 import { geoGuessrClient } from '../utils/axios-instance';
@@ -39,6 +40,8 @@ type ChallengeResultsResponse = {
 	items: Array<ChallengePlayerScore>;
 };
 
+const resultsLengths: Map<string, number> = new Map();
+
 function getResultUrl(challengeToken: string): string {
 	return `/api/v3/results/highscores/${challengeToken}?friends=true&limit=26`;
 }
@@ -59,9 +62,43 @@ function getPlayersResults(players: ChallengePlayerScore[]) {
 	});
 }
 
+export function pollResults({ challengeToken, timeoutMs, message }: ChallengeResultsOptions) {
+	resultsLengths.set(challengeToken, 0);
+
+	const interval = setInterval(() => {
+		updateChallengeResults({ challengeToken, message });
+	}, 5000);
+
+	setTimeout(() => {
+		clearInterval(interval);
+		resultsLengths.delete(challengeToken);
+		console.log('Stopped polling results');
+	}, timeoutMs);
+}
+
+export async function updateChallengeResults({ challengeToken, message }: UpdateResultParams) {
+	let result: AxiosResponse<ChallengeResultsResponse>;
+	try {
+		result = await geoGuessrClient<ChallengeResultsResponse>(getResultUrl(challengeToken));
+	} catch (error) {
+		return;
+	}
+	resultsImage(challengeToken).then((r) => {
+		if (r instanceof Buffer) {
+			message.edit({ embeds: [], files: [{ attachment: r }] });
+		}
+	});
+}
+
 export async function resultsImage(token: string) {
 	const { data } = await geoGuessrClient<ChallengeResultsResponse>(getResultUrl(token));
 	const playerResults = getPlayersResults(data.items);
+
+	if (resultsLengths.has(token)) {
+		if (resultsLengths.get(token) === playerResults.length) return;
+		resultsLengths.set(token, playerResults.length);
+	}
+
 	const result = await nodeHtmlToImage({
 		html: `<style>
 		@import url("https://fonts.cdnfonts.com/css/neo-sans-pro"); table { font-family: "Neo Sans Pro",
