@@ -4,5 +4,6 @@ namespace NodeJS {
 		CLIENT_ID: string;
 		BOT_TOKEN: string;
 		COOKIE: string;
+		GUILD_ID: string;
 	}
 }
