@@ -21,7 +21,7 @@ export async function newChallenge(
 		token,
 		user: interaction.user.username,
 		map: challengeInfo.map.name,
-		timeLimit: options.timeLimit + 's',
+		timeLimit: options.timeLimit,
 		move: !options.forbidMoving,
 		pan: !options.forbidRotating,
 		zoom: !options.forbidZooming,
