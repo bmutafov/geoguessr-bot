@@ -49,11 +49,11 @@ export async function createChallenge(options: ChallengeOptions) {
  */
 function parseOptions(options: ChallengeOptions): CreateChallenge.Request {
 	return {
-		forbidMoving: options.forbidMoving || DefaultChallengeSettings.forbidMoving,
-		forbidRotating: options.forbidRotating || DefaultChallengeSettings.forbidRotating,
-		forbidZooming: options.forbidZooming || DefaultChallengeSettings.forbidZooming,
-		map: options.map || DefaultChallengeSettings.map,
-		rounds: options.rounds || DefaultChallengeSettings.rounds,
-		timeLimit: options.timeLimit || DefaultChallengeSettings.timeLimit,
+		forbidMoving: options.forbidMoving ?? DefaultChallengeSettings.forbidMoving,
+		forbidRotating: options.forbidRotating ?? DefaultChallengeSettings.forbidRotating,
+		forbidZooming: options.forbidZooming ?? DefaultChallengeSettings.forbidZooming,
+		map: options.map ?? DefaultChallengeSettings.map,
+		rounds: options.rounds ?? DefaultChallengeSettings.rounds,
+		timeLimit: options.timeLimit ?? DefaultChallengeSettings.timeLimit,
 	};
 }
