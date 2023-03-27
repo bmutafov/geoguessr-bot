@@ -9,7 +9,8 @@
 		"deploy-commands": "npm run clean && npm run build && node build/deploy/deploy-commands.js",
 		"clean": "rimraf ./build/",
 		"build": "tsc",
-		"watch": "tsc --watch"
+		"watch": "tsc --watch",
+		"start": "node build/index"
 	},
 	"author": "",
 	"license": "ISC",
