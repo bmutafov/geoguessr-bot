@@ -14,7 +14,7 @@ export function loadCommands(client: Client) {
 		const command = require(filePath) as Command;
 
 		if (isCommand(command)) {
-			console.log(cyan('Registering slash command: ') + yellow('/' + command.data.name));
+			console.log(cyan('Available command: ') + yellow('/' + command.data.name));
 
 			client.commands.set(command.data.name, command);
 		} else {

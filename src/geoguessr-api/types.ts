@@ -88,6 +88,10 @@ namespace ChallengeResults {
 		roundScoreInPoints: number;
 	};
 
+	/**
+	 * Parsed type of the results returned from the Response.
+	 * Used throughout the application
+	 */
 	export type Parsed = {
 		playerName: string;
 		guesses: Array<number>;
