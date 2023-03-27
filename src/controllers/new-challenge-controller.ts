@@ -5,6 +5,8 @@ import { getChallenge } from '../geoguessr-api/api/get-challenge';
 import { resultsCache } from './results-cache';
 import { pollResults } from './results-controller';
 
+export const userChallengesMap = new Map<string, CreateChallenge.Request>();
+
 export async function newChallenge(
 	options: CreateChallenge.Request,
 	interaction: ChatInputCommandInteraction | ButtonInteraction
@@ -30,6 +32,8 @@ export async function newChallenge(
 		components: [components],
 		fetchReply: true,
 	});
+
+	userChallengesMap.set(interaction.user.id, options);
 
 	pollResults({
 		token,
