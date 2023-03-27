@@ -1,8 +1,6 @@
 import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
-import { createChallenge, DefaultChallengeSettings } from '../challenges/create';
-import { getChallengeInfo } from '../challenges/get-challenge-info';
-import { pollResults } from '../challenges/results-image';
-import { newChallengeEmbed } from '../embeds/new-challenge';
+import { newChallenge } from '../controllers/new-challenge-controller';
+import { DefaultChallengeSettings } from '../geoguessr-api/api/create-challenge';
 
 export const data = new SlashCommandBuilder()
 	.setName('challenge')
@@ -38,6 +36,7 @@ function getOptions(interaction: ChatInputCommandInteraction) {
 	const pan = interaction.options.getBoolean('pan') ?? !DefaultChallengeSettings.forbidRotating;
 	const zoom = interaction.options.getBoolean('zoom') ?? !DefaultChallengeSettings.forbidZooming;
 	const timeLimit = interaction.options.getNumber('time') ?? DefaultChallengeSettings.timeLimit;
+	const rounds = DefaultChallengeSettings.rounds;
 
 	return {
 		move,
@@ -45,42 +44,23 @@ function getOptions(interaction: ChatInputCommandInteraction) {
 		zoom,
 		timeLimit,
 		map,
+		rounds,
 	};
 }
 
 export async function execute(interaction: ChatInputCommandInteraction) {
 	if (interaction.isRepliable()) {
 		const options = getOptions(interaction);
-		const token = await createChallenge({
-			forbidMoving: !options.move,
-			forbidRotating: !options.pan,
-			forbidZooming: !options.zoom,
-			map: options.map,
-			timeLimit: options.timeLimit,
-		});
-
-		const challengeInfo = await getChallengeInfo(token);
-
-		const { components, embed } = newChallengeEmbed({
-			token,
-			user: interaction.user.username,
-			map: challengeInfo.map.name,
-			timeLimit: options.timeLimit + 's',
-			move: options.move,
-			pan: options.pan,
-			zoom: options.zoom,
-		});
-
-		const botReplyMessage = await interaction.reply({
-			embeds: [embed],
-			components: [components],
-			fetchReply: true,
-		});
-
-		pollResults({
-			challengeToken: token,
-			message: botReplyMessage,
-			timeoutMs: (options.timeLimit ?? DefaultChallengeSettings.timeLimit) * 5100,
-		});
+		await newChallenge(
+			{
+				forbidMoving: !options.move,
+				forbidRotating: !options.pan,
+				forbidZooming: !options.zoom,
+				map: options.map,
+				timeLimit: options.timeLimit,
+				rounds: options.rounds,
+			},
+			interaction
+		);
 	}
 }
