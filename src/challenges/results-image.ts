@@ -1,4 +1,4 @@
-import { Message } from 'discord.js';
+import { AttachmentBuilder, Embed, EmbedBuilder, Message, MessageEditOptions } from 'discord.js';
 import nodeHtmlToImage from 'node-html-to-image';
 import { geoGuessrClient } from '../utils/axios-instance';
 import fs from 'node:fs';
@@ -31,6 +31,12 @@ type ChallengePlayerScore = {
 	playerName: string;
 	totalScore: number;
 	userId: string;
+};
+
+type ConstructUpdateObjectOptions = {
+	embed: Embed;
+	token: string;
+	results: Buffer;
 };
 
 type ChallengeResultsResponse = {
@@ -68,14 +74,34 @@ async function getPlayersResults(token: string) {
 	});
 }
 
+export function constructUpdateObject({
+	embed,
+	results,
+	token,
+}: ConstructUpdateObjectOptions): MessageEditOptions {
+	const updatedEmbed = EmbedBuilder.from(embed).setImage(`attachment://results.png`);
+	const components = challengeComponents(token);
+	const file = new AttachmentBuilder(results, { name: 'results.png' });
+
+	return {
+		embeds: [updatedEmbed],
+		components: [components],
+		files: [file],
+	};
+}
+
 export function pollResults({ challengeToken, timeoutMs, message }: ChallengeResultsOptions) {
 	resultsLengths.set(challengeToken, 0);
 
 	const interval = setInterval(async () => {
 		const newResults = await getUpdatedChallengeResults(challengeToken);
 		if (newResults) {
-			const components = challengeComponents(challengeToken);
-			message.edit({ components: [components], files: [{ attachment: newResults }] });
+			const messageEditOptions = constructUpdateObject({
+				embed: message.embeds[0],
+				token: challengeToken,
+				results: newResults,
+			});
+			message.edit(messageEditOptions);
 		}
 	}, POLLING_INTERVAL);
 
