@@ -1,6 +1,7 @@
 import { isAxiosError } from 'axios';
 import { geoGuessrClient } from '../../utils/axios-instance';
-import log from '../../utils/logger';
+import log, { debugLog } from '../../utils/logger';
+import { GeoGuessrApiError } from '../geoguessr-error';
 
 type ChallengeOptions = Partial<CreateChallenge.Request>;
 
@@ -22,18 +23,21 @@ export async function createChallenge(options: ChallengeOptions) {
 	const requestBody: CreateChallenge.Request = parseOptions(options);
 
 	try {
-		const { data } = await geoGuessrClient.post<CreateChallenge.Response>(
-			'/api/v3/challenges',
-			requestBody
-		);
+		const {
+			data: { token },
+		} = await geoGuessrClient.post<CreateChallenge.Response>('/api/v3/challenges', requestBody);
 
-		return data.token;
+		debugLog(`New challenge created: ${token}`);
+
+		return token;
 	} catch (error) {
 		if (isAxiosError(error)) {
 			console.log('createChallengeAxios: ', log.error(error.message));
 		} else {
 			console.log('createChallengeUnexpected: ', error);
 		}
+
+		throw new GeoGuessrApiError('Oops. Something went wrong!');
 	}
 }
 

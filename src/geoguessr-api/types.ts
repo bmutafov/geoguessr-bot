@@ -22,9 +22,23 @@ namespace CreateChallenge {
 }
 
 namespace GetChallenge {
+	type Challenge = {
+		challengeType: number;
+		forbidMoving: boolean;
+		forbidRotating: boolean;
+		forbidZooming: boolean;
+		gameMode: string;
+		mapSlug: string;
+		numberOfParticipants: number;
+		roundCount: number;
+		streakType: string;
+		timeLimit: number;
+		token: string;
+	};
+
 	//TODO: Type fully objects
-	type Challenge = Record<any, any>;
 	type Creator = Record<any, any>;
+
 	type Map = {
 		name: string;
 		url: string;
@@ -72,5 +86,12 @@ namespace ChallengeResults {
 
 	type Guess = {
 		roundScoreInPoints: number;
+	};
+
+	export type Parsed = {
+		playerName: string;
+		guesses: Array<number>;
+		totalScore: number;
+		avatar: string;
 	};
 }

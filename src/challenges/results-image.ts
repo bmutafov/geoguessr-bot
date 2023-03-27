@@ -3,7 +3,7 @@ import nodeHtmlToImage from 'node-html-to-image';
 import { geoGuessrClient } from '../utils/axios-instance';
 import fs from 'node:fs';
 import path from 'node:path';
-import { challengeComponents } from '../embeds/new-challenge';
+import { getEndGameButtons } from '../embeds/new-challenge';
 
 type ChallengeResultsOptions = {
 	challengeToken: string;
@@ -80,7 +80,7 @@ export function constructUpdateObject({
 	token,
 }: ConstructUpdateObjectOptions): MessageEditOptions {
 	const updatedEmbed = EmbedBuilder.from(embed).setImage(`attachment://results.png`);
-	const components = challengeComponents(token);
+	const components = getEndGameButtons(token);
 	const file = new AttachmentBuilder(results, { name: 'results.png' });
 
 	return {
@@ -109,7 +109,7 @@ export function pollResults({ challengeToken, timeoutMs, message }: ChallengeRes
 		clearInterval(interval);
 		const results = resultsLengths.get(challengeToken);
 		if (results === 0) {
-			const components = challengeComponents(challengeToken);
+			const components = getEndGameButtons(challengeToken);
 			message.edit({ components: [components] });
 		}
 		resultsLengths.delete(challengeToken);

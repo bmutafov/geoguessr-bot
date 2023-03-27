@@ -1,8 +1,9 @@
-import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
-import { createChallenge, DefaultChallengeSettings } from '../challenges/create';
-import { getChallengeInfo } from '../challenges/get-challenge-info';
-import { pollResults } from '../challenges/results-image';
-import { newChallengeEmbed } from '../embeds/new-challenge';
+import { ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
+import { resultsCache } from '../controllers/results-cache';
+import { pollResults } from '../controllers/results-controller';
+import { getEndGameButtons, newChallengeEmbed } from '../embeds/new-challenge';
+import { createChallenge, DefaultChallengeSettings } from '../geoguessr-api/api/create-challenge';
+import { getChallenge } from '../geoguessr-api/api/get-challenge';
 
 export const data = new SlashCommandBuilder()
 	.setName('challenge')
@@ -59,7 +60,9 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 			timeLimit: options.timeLimit,
 		});
 
-		const challengeInfo = await getChallengeInfo(token);
+		resultsCache.save(token, 0);
+
+		const challengeInfo = await getChallenge(token);
 
 		const { components, embed } = newChallengeEmbed({
 			token,
@@ -78,9 +81,21 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 		});
 
 		pollResults({
-			challengeToken: token,
-			message: botReplyMessage,
-			timeoutMs: (options.timeLimit ?? DefaultChallengeSettings.timeLimit) * 5100,
+			token,
+			onResultsUpdate: (attachment) => {
+				const updatedEmbed = EmbedBuilder.from(embed).setImage(attachment.fileName);
+				botReplyMessage.edit({
+					embeds: [updatedEmbed],
+					components: [components],
+					files: [attachment.file],
+				});
+			},
+			onPollingEnd: () => {
+				botReplyMessage.edit({
+					content: '\nThis challenge has ended. To check for updates press the "Refresh" button\n',
+					components: [getEndGameButtons(token)],
+				});
+			},
 		});
 	}
 }

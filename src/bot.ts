@@ -6,6 +6,7 @@ import {
 	Interaction,
 } from 'discord.js';
 import { constructUpdateObject, getUpdatedChallengeResults } from './challenges/results-image';
+import { GeoGuessrApiError } from './geoguessr-api/geoguessr-error';
 
 /**
  * Registers event listeners for the discord client
@@ -19,8 +20,22 @@ export function handleEvents(client: Client) {
  * Handles all types of interactions, listener to InteractionCreate event
  */
 function handleInteraction(interaction: Interaction) {
-	if (interaction.isButton()) handleButtonInteraction(interaction);
-	if (interaction.isChatInputCommand()) handleChatInputInteraction(interaction);
+	try {
+		if (interaction.isButton()) handleButtonInteraction(interaction);
+		if (interaction.isChatInputCommand()) handleChatInputInteraction(interaction);
+	} catch (error) {
+		let message: string = 'Unknown error occurred';
+
+		if (error instanceof GeoGuessrApiError) {
+			message = error.message;
+		}
+
+		if (interaction.isRepliable()) {
+			interaction.reply(message);
+		}
+
+		interaction.channel?.send(message);
+	}
 }
 
 /**

@@ -1,6 +1,7 @@
 import { isAxiosError } from 'axios';
 import { geoGuessrClient } from '../../utils/axios-instance';
-import log from '../../utils/logger';
+import log, { debugLog } from '../../utils/logger';
+import { GeoGuessrApiError } from '../geoguessr-error';
 
 const AVATAR_URL = 'https://www.geoguessr.com/images/auto/48/48/ce/0/plain/';
 
@@ -9,17 +10,37 @@ const AVATAR_URL = 'https://www.geoguessr.com/images/auto/48/48/ce/0/plain/';
  * @param token Game token to fetch the results for
  * @returns An object containing data for the results of the given game
  */
-export async function resultsChallenge(token: string) {
+export async function getChallengeResults(token: string) {
 	try {
-		const { data } = await geoGuessrClient.get<ChallengeResults.Response>(getResultUrl(token));
+		const { data, status } = await geoGuessrClient.get<ChallengeResults.Response>(
+			getResultUrl(token),
+			{
+				validateStatus: (status) => {
+					if (status >= 200 && status <= 299) {
+						return true;
+					}
 
-		return parseResults(data.items);
+					if (status === 401) {
+						debugLog(`No results yet for challenge ${token}`);
+						return true;
+					}
+					return false;
+				},
+			}
+		);
+
+		const results = status === 200 ? data.items : [];
+		debugLog(`Request to check results for ${token} - ${results.length} results detected`);
+
+		return parseResults(results);
 	} catch (error) {
 		if (isAxiosError(error)) {
-			console.log('resultsChallengeAxios: ', log.error(error.message));
+			console.log('getChallengeResultsAxios: ', log.error(error.message));
 		} else {
-			console.log('resultsChallengeUnexpected: ', error);
+			console.log('getChallengeResultsUnexpected: ', error);
 		}
+
+		throw new GeoGuessrApiError('Oops. Something went wrong!');
 	}
 }
 
@@ -38,7 +59,7 @@ function getResultUrl(token: string): string {
  * @param results Results from the API
  * @returns Transformed format results
  */
-function parseResults(results: ChallengeResults.PlayerScore[]) {
+function parseResults(results: ChallengeResults.PlayerScore[]): ChallengeResults.Parsed[] {
 	return results.map((score) => {
 		const guesses = score.game.player.guesses.map((guess) => guess.roundScoreInPoints);
 		const avatar = AVATAR_URL + score.pinUrl;

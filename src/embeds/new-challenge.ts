@@ -1,5 +1,6 @@
 import { ActionRowBuilder, ButtonBuilder, EmbedBuilder } from '@discordjs/builders';
 import { ButtonStyle } from 'discord.js';
+import { debugLog } from '../utils/logger';
 
 type NewChallengeEmbedOptions = {
 	token: string;
@@ -24,13 +25,15 @@ const getRefreshButton = (token: string) =>
 		.setCustomId(`refetch:${token}`)
 		.setStyle(ButtonStyle.Secondary);
 
-export const challengeComponents = (token: string) =>
+export const getEndGameButtons = (token: string) =>
 	new ActionRowBuilder<ButtonBuilder>().addComponents(
 		getPlayButton(getChallengeUrl(token)),
 		getRefreshButton(token)
 	);
 
 export const newChallengeEmbed = (options: NewChallengeEmbedOptions) => {
+	debugLog(`New embed created for challenge: ${options.token}`);
+
 	const url = getChallengeUrl(options.token);
 
 	return {
