@@ -10,7 +10,7 @@ class ResultsCache {
 			return this.cache.get(token) !== resultsCount;
 		}
 
-		return false;
+		return true;
 	}
 
 	clear(token: string) {

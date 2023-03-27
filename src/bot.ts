@@ -5,7 +5,7 @@ import {
 	Events,
 	Interaction,
 } from 'discord.js';
-import { constructUpdateObject, getUpdatedChallengeResults } from './challenges/results-image';
+import { handleRefetchButtonClick } from './buttons/refetch';
 import { GeoGuessrApiError } from './geoguessr-api/geoguessr-error';
 
 /**
@@ -46,18 +46,7 @@ async function handleButtonInteraction(interaction: ButtonInteraction) {
 	const [action, payload] = interaction.customId.split(':');
 
 	if (action === 'refetch') {
-		const newResults = await getUpdatedChallengeResults(payload);
-		if (newResults) {
-			const messageEditOptions = constructUpdateObject({
-				embed: interaction.message.embeds[0],
-				token: payload,
-				results: newResults,
-			});
-
-			interaction.update(messageEditOptions);
-		} else {
-			interaction.update({ content: interaction.message.content });
-		}
+		handleRefetchButtonClick(payload, interaction);
 	}
 }
 

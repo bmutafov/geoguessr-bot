@@ -9,23 +9,29 @@ import { snooze } from '../utils/snooze';
 import { resultsCache } from './results-cache';
 
 export type OnNewResultsCallback = Awaited<ReturnType<typeof prepareImageAttachment>>;
+
 type PollResultsOptions = {
 	token: string;
 	onResultsUpdate: (attachment: OnNewResultsCallback) => void;
 	onPollingEnd: () => void;
 };
 
-const WAIT_TIME_PER_ROUND = 1;
+const WAIT_TIME_PER_ROUND = 20;
 const POLLING_INTERVAL = 7_500;
 const THREE_MINUTES = 3 * 60 * 1000;
 
-const template = fs
+const imageTemplate = fs
 	.readFileSync(path.resolve(__dirname, '../../public/results-image.hbs'))
 	.toString();
 
+/**
+ * Generates an image preview of the provided results
+ * @param results Challenge results object - needs to be parsed
+ * @returns Buffer of an image
+ */
 export async function resultsToImage(results: ChallengeResults.Parsed[]) {
 	const result = await nodeHtmlToImage({
-		html: template,
+		html: imageTemplate,
 		content: { containerHeight: results.length * 35 + 70, playerResults: results },
 		transparent: true,
 		selector: '.container',
@@ -34,6 +40,12 @@ export async function resultsToImage(results: ChallengeResults.Parsed[]) {
 	return result as Buffer;
 }
 
+/**
+ * Checks with the GeoGuessr API for updates to the challenge.
+ * @param token The challenge token
+ * @returns An object with updated property, which indicates if there are updates since last fetch.
+ * Results property with the latest results.
+ */
 export async function checkForResultsUpdate(token: string) {
 	const results = await getChallengeResults(token);
 	const haveResultsUpdated = resultsCache.hasUpdates(token, results.length);
@@ -48,6 +60,9 @@ export async function checkForResultsUpdate(token: string) {
 	};
 }
 
+/**
+ * Makes long-polling requests to the GeoGuessrAPI every X seconds to check for new results
+ */
 export async function pollResults({ token, onResultsUpdate, onPollingEnd }: PollResultsOptions) {
 	const gameInfo = await getChallenge(token);
 	const { timeLimit, roundCount } = gameInfo.challenge;
@@ -73,6 +88,12 @@ export async function pollResults({ token, onResultsUpdate, onPollingEnd }: Poll
 	}, MAX_POLL_TIME);
 }
 
+/**
+ * Function which checks for updates one time and if there are updates prepares the preview
+ * image. Calls the callback with the attachment, ready to be sent to discord.
+ * @param token The game challenge token
+ * @param onNewResultsCallback Callback which executes only when new results are detected
+ */
 export async function updateResults(
 	token: string,
 	onNewResultsCallback: (attachment: OnNewResultsCallback) => void
@@ -85,6 +106,13 @@ export async function updateResults(
 	onNewResultsCallback(attachment);
 }
 
+/**
+ * Prepares an an image in discord attachment format. It uses resultsToImage function to generate
+ * a Buffer, which then using Discord.js API is prepared to be sent as attachment. File attachment and
+ * file name are returned
+ * @param token The game challenge token
+ * @param results The latest results for the challenge
+ */
 async function prepareImageAttachment(token: string, results: ChallengeResults.Parsed[]) {
 	debugLog(`Preparing results image for ${token}`);
 
