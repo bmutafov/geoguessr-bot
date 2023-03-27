@@ -1,9 +1,6 @@
-import { ChatInputCommandInteraction, EmbedBuilder, SlashCommandBuilder } from 'discord.js';
-import { resultsCache } from '../controllers/results-cache';
-import { pollResults } from '../controllers/results-controller';
-import { getEndGameButtons, newChallengeEmbed } from '../embeds/new-challenge';
-import { createChallenge, DefaultChallengeSettings } from '../geoguessr-api/api/create-challenge';
-import { getChallenge } from '../geoguessr-api/api/get-challenge';
+import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
+import { newChallenge } from '../controllers/new-challenge-controller';
+import { DefaultChallengeSettings } from '../geoguessr-api/api/create-challenge';
 
 export const data = new SlashCommandBuilder()
 	.setName('challenge')
@@ -39,6 +36,7 @@ function getOptions(interaction: ChatInputCommandInteraction) {
 	const pan = interaction.options.getBoolean('pan') ?? !DefaultChallengeSettings.forbidRotating;
 	const zoom = interaction.options.getBoolean('zoom') ?? !DefaultChallengeSettings.forbidZooming;
 	const timeLimit = interaction.options.getNumber('time') ?? DefaultChallengeSettings.timeLimit;
+	const rounds = DefaultChallengeSettings.rounds;
 
 	return {
 		move,
@@ -46,56 +44,23 @@ function getOptions(interaction: ChatInputCommandInteraction) {
 		zoom,
 		timeLimit,
 		map,
+		rounds,
 	};
 }
 
 export async function execute(interaction: ChatInputCommandInteraction) {
 	if (interaction.isRepliable()) {
 		const options = getOptions(interaction);
-		const token = await createChallenge({
-			forbidMoving: !options.move,
-			forbidRotating: !options.pan,
-			forbidZooming: !options.zoom,
-			map: options.map,
-			timeLimit: options.timeLimit,
-		});
-
-		resultsCache.save(token, 0);
-
-		const challengeInfo = await getChallenge(token);
-
-		const { components, embed } = newChallengeEmbed({
-			token,
-			user: interaction.user.username,
-			map: challengeInfo.map.name,
-			timeLimit: options.timeLimit + 's',
-			move: options.move,
-			pan: options.pan,
-			zoom: options.zoom,
-		});
-
-		const botReplyMessage = await interaction.reply({
-			embeds: [embed],
-			components: [components],
-			fetchReply: true,
-		});
-
-		pollResults({
-			token,
-			onResultsUpdate: (attachment) => {
-				const updatedEmbed = EmbedBuilder.from(embed).setImage(attachment.fileName);
-				botReplyMessage.edit({
-					embeds: [updatedEmbed],
-					components: [components],
-					files: [attachment.file],
-				});
+		await newChallenge(
+			{
+				forbidMoving: !options.move,
+				forbidRotating: !options.pan,
+				forbidZooming: !options.zoom,
+				map: options.map,
+				timeLimit: options.timeLimit,
+				rounds: options.rounds,
 			},
-			onPollingEnd: () => {
-				botReplyMessage.edit({
-					content: '\nThis challenge has ended. To check for updates press the "Refresh" button\n',
-					components: [getEndGameButtons(token)],
-				});
-			},
-		});
+			interaction
+		);
 	}
 }

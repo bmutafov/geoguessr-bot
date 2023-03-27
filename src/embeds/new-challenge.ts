@@ -19,6 +19,12 @@ const getChallengeUrl = (token: string) => `https://www.geoguessr.com/challenge/
 const getPlayButton = (url: string) =>
 	new ButtonBuilder().setLabel('Play').setStyle(ButtonStyle.Link).setURL(url);
 
+const getCloneButton = (token: string) =>
+	new ButtonBuilder()
+		.setLabel('Clone')
+		.setStyle(ButtonStyle.Secondary)
+		.setCustomId(`clone:${token}`);
+
 const getRefreshButton = (token: string) =>
 	new ButtonBuilder()
 		.setLabel('Refresh')
@@ -28,7 +34,8 @@ const getRefreshButton = (token: string) =>
 export const getEndGameButtons = (token: string) =>
 	new ActionRowBuilder<ButtonBuilder>().addComponents(
 		getPlayButton(getChallengeUrl(token)),
-		getRefreshButton(token)
+		getRefreshButton(token),
+		getCloneButton(token)
 	);
 
 export const newChallengeEmbed = (options: NewChallengeEmbedOptions) => {
@@ -51,6 +58,9 @@ export const newChallengeEmbed = (options: NewChallengeEmbedOptions) => {
 				{ name: 'Pan', value: getBooleanEmoji(options.pan), inline: true },
 				{ name: 'Zoom', value: getBooleanEmoji(options.zoom), inline: true }
 			),
-		components: new ActionRowBuilder<ButtonBuilder>().addComponents(getPlayButton(url)),
+		components: new ActionRowBuilder<ButtonBuilder>().addComponents(
+			getPlayButton(url),
+			getCloneButton(options.token)
+		),
 	};
 };

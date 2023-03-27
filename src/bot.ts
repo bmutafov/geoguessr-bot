@@ -5,6 +5,7 @@ import {
 	Events,
 	Interaction,
 } from 'discord.js';
+import { handleCloneButtonClick } from './buttons/clone';
 import { handleRefetchButtonClick } from './buttons/refetch';
 import { GeoGuessrApiError } from './geoguessr-api/geoguessr-error';
 
@@ -47,6 +48,9 @@ async function handleButtonInteraction(interaction: ButtonInteraction) {
 
 	if (action === 'refetch') {
 		handleRefetchButtonClick(payload, interaction);
+	}
+	if (action === 'clone') {
+		handleCloneButtonClick(payload, interaction);
 	}
 }
 
