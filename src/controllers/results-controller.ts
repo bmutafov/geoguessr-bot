@@ -16,7 +16,7 @@ type PollResultsOptions = {
 	onPollingEnd: () => void;
 };
 
-const WAIT_TIME_PER_ROUND = 20;
+const WAIT_TIME_PER_ROUND = 10;
 const POLLING_INTERVAL = 7_500;
 const THREE_MINUTES = 3 * 60 * 1000;
 
